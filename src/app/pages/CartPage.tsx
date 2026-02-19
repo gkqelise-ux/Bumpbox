@@ -2,7 +2,7 @@ import { Link, useNavigate } from 'react-router';
 import { useCart } from '../context/CartContext';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
-import { ArrowLeft, Minus, Plus, Trash2, ShoppingBag } from 'lucide-react';
+import { ArrowLeft, Trash2, ShoppingBag } from 'lucide-react';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 
 export function CartPage() {
@@ -73,6 +73,7 @@ export function CartPage() {
                       <h3 className="font-semibold mb-1">{item.title}</h3>
                       <p className="text-sm text-gray-600 mb-2">{item.condition}</p>
                       <p className="font-bold text-lg">${item.price}</p>
+                      <p className="text-sm text-gray-500 mt-1">Quantity: 1</p>
                     </div>
 
                     <div className="flex flex-col items-end justify-between">
@@ -83,25 +84,6 @@ export function CartPage() {
                       >
                         <Trash2 className="h-4 w-4 text-red-600" />
                       </Button>
-
-                      <div className="flex items-center border rounded-lg">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                          disabled={item.quantity <= 1}
-                        >
-                          <Minus className="h-4 w-4" />
-                        </Button>
-                        <span className="px-4 py-2 font-medium">{item.quantity}</span>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                        >
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                      </div>
                     </div>
                   </div>
                 </CardContent>

@@ -20,11 +20,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setCart((prevCart) => {
       const existingItem = prevCart.find((cartItem) => cartItem.id === item.id);
       if (existingItem) {
-        return prevCart.map((cartItem) =>
-          cartItem.id === item.id
-            ? { ...cartItem, quantity: cartItem.quantity + 1 }
-            : cartItem
-        );
+        // Don't increase quantity if item is already in cart
+        return prevCart;
       }
       return [...prevCart, { ...item, quantity: 1 }];
     });
@@ -35,13 +32,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
   };
 
   const updateQuantity = (itemId: string, quantity: number) => {
-    if (quantity <= 0) {
-      removeFromCart(itemId);
+    // Only allow quantity of 1 for each item
+    if (quantity <= 0 || quantity > 1) {
       return;
     }
     setCart((prevCart) =>
       prevCart.map((item) =>
-        item.id === itemId ? { ...item, quantity } : item
+        item.id === itemId ? { ...item, quantity: 1 } : item
       )
     );
   };

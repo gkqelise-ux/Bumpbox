@@ -7,21 +7,61 @@ import { Card, CardContent } from '../components/ui/card';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { RadioGroup, RadioGroupItem } from '../components/ui/radio-group';
-import { ArrowLeft, MapPin, Clock } from 'lucide-react';
+import { ArrowLeft, MapPin, Clock, CreditCard, Smartphone, QrCode } from 'lucide-react';
 
 export function CheckoutPage() {
   const navigate = useNavigate();
   const { cart, getCartTotal, clearCart } = useCart();
-  const [selectedLocker, setSelectedLocker] = useState(mockLockers[0].id);
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState('credit-card');
+  
+  // Credit Card Fields
+  const [cardNumber, setCardNumber] = useState('');
+  const [cardName, setCardName] = useState('');
+  const [expiryDate, setExpiryDate] = useState('');
+  const [cvv, setCvv] = useState('');
+  
+  // PayNow
+  const [showPayNowQR, setShowPayNowQR] = useState(false);
 
   useEffect(() => {
     if (cart.length === 0 && !isCheckingOut) {
       navigate('/cart');
     }
   }, [cart.length, navigate, isCheckingOut]);
+
+  // Determine the locker based on cart items
+  const getPickupLocker = () => {
+    if (cart.length === 0) return mockLockers[0];
+    
+    // Group items by locker
+    const lockerCounts = cart.reduce((acc, item) => {
+      acc[item.lockerId] = (acc[item.lockerId] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    
+    // Find the locker with most items (or first locker if tie)
+    const primaryLockerId = Object.keys(lockerCounts).sort((a, b) => 
+      lockerCounts[b] - lockerCounts[a]
+    )[0];
+    
+    return mockLockers.find(l => l.id === primaryLockerId) || mockLockers[0];
+  };
+
+  const pickupLocker = getPickupLocker();
+
+  const isPaymentValid = () => {
+    if (paymentMethod === 'credit-card') {
+      return cardNumber && cardName && expiryDate && cvv;
+    } else if (paymentMethod === 'apple-pay') {
+      return true; // Apple Pay doesn't need additional validation
+    } else if (paymentMethod === 'paynow') {
+      return showPayNowQR; // User must view QR code
+    }
+    return false;
+  };
 
   const handleCheckout = () => {
     setIsCheckingOut(true);
@@ -33,12 +73,13 @@ export function CheckoutPage() {
       id: Date.now().toString(),
       items: cart,
       total: getCartTotal() + 5,
-      locker: mockLockers.find((l) => l.id === selectedLocker)!,
+      locker: pickupLocker,
       date: new Date().toISOString(),
       status: 'Processing',
       accessCode,
       email,
       phone,
+      paymentMethod,
     };
     
     sessionStorage.setItem('lastOrder', JSON.stringify(order));
@@ -100,53 +141,201 @@ export function CheckoutPage() {
               </CardContent>
             </Card>
 
-            {/* Locker Selection */}
+            {/* Pickup Location */}
             <Card>
               <CardContent className="p-6">
-                <h2 className="text-xl font-bold mb-4">Select Pickup Locker</h2>
+                <h2 className="text-xl font-bold mb-4">Pickup Location</h2>
                 <p className="text-sm text-gray-600 mb-4">
-                  Choose a convenient locker location to collect your items
+                  Your items will be available for pickup at this locker
                 </p>
-
-                <RadioGroup value={selectedLocker} onValueChange={setSelectedLocker}>
-                  <div className="space-y-3">
-                    {mockLockers.map((locker) => (
-                      <div
-                        key={locker.id}
-                        className={`border rounded-lg p-4 cursor-pointer transition-colors ${
-                          selectedLocker === locker.id
-                            ? 'border-blue-600 bg-blue-50'
-                            : 'border-gray-200 hover:border-gray-300'
-                        }`}
-                        onClick={() => setSelectedLocker(locker.id)}
-                      >
-                        <div className="flex items-start">
-                          <RadioGroupItem value={locker.id} id={locker.id} className="mt-1" />
-                          <div className="ml-3 flex-1">
-                            <Label htmlFor={locker.id} className="font-semibold text-base cursor-pointer">
-                              {locker.name}
-                            </Label>
-                            <div className="mt-2 space-y-1">
-                              <div className="flex items-center text-sm text-gray-600">
-                                <MapPin className="h-4 w-4 mr-2" />
-                                {locker.address}, {locker.city}
-                              </div>
-                              <div className="flex items-center text-sm text-gray-600">
-                                <Clock className="h-4 w-4 mr-2" />
-                                {locker.hours}
-                              </div>
-                              {locker.distance && (
-                                <div className="text-sm font-medium text-blue-600">
-                                  {locker.distance} away
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
+                
+                <div className="border border-blue-600 bg-blue-50 rounded-lg p-4">
+                  <div>
+                    <p className="font-semibold text-base mb-2">
+                      {pickupLocker.name}
+                    </p>
+                    <div className="space-y-1">
+                      <div className="flex items-center text-sm text-gray-600">
+                        <MapPin className="h-4 w-4 mr-2" />
+                        {pickupLocker.address}, {pickupLocker.city}
                       </div>
-                    ))}
+                      <div className="flex items-center text-sm text-gray-600">
+                        <Clock className="h-4 w-4 mr-2" />
+                        {pickupLocker.hours}
+                      </div>
+                      {pickupLocker.distance && (
+                        <div className="text-sm font-medium text-blue-600">
+                          {pickupLocker.distance} away
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500 mt-3">
+                  Location based on item availability
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Payment Method */}
+            <Card>
+              <CardContent className="p-6">
+                <h2 className="text-xl font-bold mb-4">Payment Method</h2>
+                
+                <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod}>
+                  <div className="space-y-3">
+                    {/* Credit Card */}
+                    <div
+                      className={`border rounded-lg p-4 cursor-pointer transition-colors ${
+                        paymentMethod === 'credit-card'
+                          ? 'border-blue-600 bg-blue-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                      onClick={() => setPaymentMethod('credit-card')}
+                    >
+                      <div className="flex items-center">
+                        <RadioGroupItem value="credit-card" id="credit-card" />
+                        <Label htmlFor="credit-card" className="ml-3 flex items-center cursor-pointer">
+                          <CreditCard className="h-5 w-5 mr-2" />
+                          <span className="font-semibold">Credit/Debit Card</span>
+                        </Label>
+                      </div>
+                    </div>
+
+                    {/* Apple Pay */}
+                    <div
+                      className={`border rounded-lg p-4 cursor-pointer transition-colors ${
+                        paymentMethod === 'apple-pay'
+                          ? 'border-blue-600 bg-blue-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                      onClick={() => setPaymentMethod('apple-pay')}
+                    >
+                      <div className="flex items-center">
+                        <RadioGroupItem value="apple-pay" id="apple-pay" />
+                        <Label htmlFor="apple-pay" className="ml-3 flex items-center cursor-pointer">
+                          <Smartphone className="h-5 w-5 mr-2" />
+                          <span className="font-semibold">Apple Pay</span>
+                        </Label>
+                      </div>
+                    </div>
+
+                    {/* PayNow */}
+                    <div
+                      className={`border rounded-lg p-4 cursor-pointer transition-colors ${
+                        paymentMethod === 'paynow'
+                          ? 'border-blue-600 bg-blue-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                      onClick={() => setPaymentMethod('paynow')}
+                    >
+                      <div className="flex items-center">
+                        <RadioGroupItem value="paynow" id="paynow" />
+                        <Label htmlFor="paynow" className="ml-3 flex items-center cursor-pointer">
+                          <QrCode className="h-5 w-5 mr-2" />
+                          <span className="font-semibold">PayNow QR</span>
+                        </Label>
+                      </div>
+                    </div>
                   </div>
                 </RadioGroup>
+
+                {/* Payment Details */}
+                <div className="mt-6">
+                  {paymentMethod === 'credit-card' && (
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="cardNumber">Card Number</Label>
+                        <Input
+                          id="cardNumber"
+                          placeholder="1234 5678 9012 3456"
+                          value={cardNumber}
+                          onChange={(e) => setCardNumber(e.target.value)}
+                          maxLength={19}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="cardName">Cardholder Name</Label>
+                        <Input
+                          id="cardName"
+                          placeholder="John Doe"
+                          value={cardName}
+                          onChange={(e) => setCardName(e.target.value)}
+                          required
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="expiryDate">Expiry Date</Label>
+                          <Input
+                            id="expiryDate"
+                            placeholder="MM/YY"
+                            value={expiryDate}
+                            onChange={(e) => setExpiryDate(e.target.value)}
+                            maxLength={5}
+                            required
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="cvv">CVV</Label>
+                          <Input
+                            id="cvv"
+                            placeholder="123"
+                            value={cvv}
+                            onChange={(e) => setCvv(e.target.value)}
+                            maxLength={4}
+                            type="password"
+                            required
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {paymentMethod === 'apple-pay' && (
+                    <div className="bg-gray-50 rounded-lg p-6 text-center">
+                      <Smartphone className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                      <p className="text-sm text-gray-600 mb-2">
+                        You'll be prompted to authorize payment with Apple Pay when you complete your order.
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        Make sure Apple Pay is set up on your device.
+                      </p>
+                    </div>
+                  )}
+
+                  {paymentMethod === 'paynow' && (
+                    <div className="bg-gray-50 rounded-lg p-6">
+                      {!showPayNowQR ? (
+                        <div className="text-center">
+                          <QrCode className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                          <p className="text-sm text-gray-600 mb-4">
+                            Click the button below to generate a PayNow QR code
+                          </p>
+                          <Button onClick={() => setShowPayNowQR(true)} variant="outline">
+                            Generate PayNow QR Code
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="text-center">
+                          <div className="bg-white p-4 rounded-lg inline-block mb-4">
+                            {/* Mock QR Code - In production, this would be a real QR code */}
+                            <div className="w-48 h-48 bg-gradient-to-br from-gray-800 to-gray-600 rounded-lg flex items-center justify-center">
+                              <QrCode className="h-32 w-32 text-white" />
+                            </div>
+                          </div>
+                          <p className="text-sm text-gray-600 mb-2">
+                            Scan this QR code with your banking app to pay ${getCartTotal() + 5}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            PayNow UEN: 123456789A
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -189,7 +378,7 @@ export function CheckoutPage() {
                   size="lg"
                   className="w-full"
                   onClick={handleCheckout}
-                  disabled={!email || !phone}
+                  disabled={!email || !phone || !isPaymentValid()}
                 >
                   Complete Order
                 </Button>

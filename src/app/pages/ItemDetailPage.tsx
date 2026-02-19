@@ -1,16 +1,16 @@
 import { useParams, Link, useNavigate } from 'react-router';
-import { mockItems } from '../data/items';
+import { mockItems, mockLockers } from '../data/items';
 import { useCart } from '../context/CartContext';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Card, CardContent } from '../components/ui/card';
-import { ArrowLeft, ShoppingCart, MapPin } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, MapPin, Clock } from 'lucide-react';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 
 export function ItemDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { addToCart, getCartCount } = useCart();
+  const { addToCart, cart, getCartCount } = useCart();
 
   const item = mockItems.find((item) => item.id === id);
 
@@ -27,9 +27,16 @@ export function ItemDetailPage() {
     );
   }
 
+  const itemLocker = mockLockers.find((l) => l.id === item.lockerId);
+  const isInCart = cart.some((cartItem) => cartItem.id === item.id);
+
   const handleAddToCart = () => {
-    addToCart(item);
-    navigate('/cart');
+    if (isInCart) {
+      navigate('/cart');
+    } else {
+      addToCart(item);
+      navigate('/cart');
+    }
   };
 
   return (
@@ -101,12 +108,26 @@ export function ItemDetailPage() {
               <Card className="mb-6 bg-blue-50 border-blue-200">
                 <CardContent className="p-4">
                   <div className="flex items-start space-x-3">
-                    <MapPin className="h-5 w-5 text-blue-600 mt-0.5" />
-                    <div>
-                      <h4 className="font-semibold text-blue-900">Locker Pickup</h4>
-                      <p className="text-sm text-blue-700">
-                        Choose your preferred pickup location at checkout
-                      </p>
+                    <MapPin className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-blue-900 mb-1">Pickup Location</h4>
+                      {itemLocker && (
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium text-blue-800">{itemLocker.name}</p>
+                          <p className="text-sm text-blue-700">
+                            {itemLocker.address}, {itemLocker.city}
+                          </p>
+                          <div className="flex items-center text-sm text-blue-700">
+                            <Clock className="h-4 w-4 mr-1" />
+                            {itemLocker.hours}
+                          </div>
+                          {itemLocker.distance && (
+                            <p className="text-sm font-medium text-blue-600">
+                              {itemLocker.distance} away
+                            </p>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </CardContent>
@@ -117,7 +138,7 @@ export function ItemDetailPage() {
                 className="w-full"
                 onClick={handleAddToCart}
               >
-                Add to Cart
+                {isInCart ? 'Go to Cart' : 'Add to Cart'}
               </Button>
             </div>
           </div>

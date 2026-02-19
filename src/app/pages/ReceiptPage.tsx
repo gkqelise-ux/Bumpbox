@@ -77,10 +77,20 @@ export function ReceiptPage() {
                   <span className="text-gray-600">Date:</span>
                   <span className="font-medium">{formattedDate}</span>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Email:</span>
-                  <span className="font-medium">{order.email}</span>
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="text-gray-600">Status:</span>
+                  <span className="font-medium text-green-600">{order.status}</span>
                 </div>
+                {order.paymentMethod && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Payment Method:</span>
+                    <span className="font-medium">
+                      {order.paymentMethod === 'credit-card' && 'Credit/Debit Card'}
+                      {order.paymentMethod === 'apple-pay' && 'Apple Pay'}
+                      {order.paymentMethod === 'paynow' && 'PayNow QR'}
+                    </span>
+                  </div>
+                )}
               </div>
 
               <Separator className="my-4" />

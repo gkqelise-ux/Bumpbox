@@ -9,6 +9,7 @@ export interface Item {
   sellerId: string;
   sellerName: string;
   availability: 'Available' | 'Pending' | 'Sold';
+  lockerId: string; // Each item is at a specific locker
 }
 
 export interface Locker {
@@ -46,6 +47,7 @@ export const mockItems: Item[] = [
     sellerId: 's1',
     sellerName: 'PhotoCollector',
     availability: 'Available',
+    lockerId: 'l1',
   },
   {
     id: '2',
@@ -58,6 +60,7 @@ export const mockItems: Item[] = [
     sellerId: 's2',
     sellerName: 'UrbanCyclist',
     availability: 'Available',
+    lockerId: 'l2',
   },
   {
     id: '3',
@@ -70,6 +73,7 @@ export const mockItems: Item[] = [
     sellerId: 's3',
     sellerName: 'FashionFinds',
     availability: 'Available',
+    lockerId: 'l3',
   },
   {
     id: '4',
@@ -82,6 +86,7 @@ export const mockItems: Item[] = [
     sellerId: 's4',
     sellerName: 'GamerZone',
     availability: 'Available',
+    lockerId: 'l1',
   },
   {
     id: '5',
@@ -94,6 +99,7 @@ export const mockItems: Item[] = [
     sellerId: 's5',
     sellerName: 'MusicLover',
     availability: 'Available',
+    lockerId: 'l4',
   },
   {
     id: '6',
@@ -106,6 +112,7 @@ export const mockItems: Item[] = [
     sellerId: 's6',
     sellerName: 'VintageHome',
     availability: 'Available',
+    lockerId: 'l2',
   },
   {
     id: '7',
@@ -118,6 +125,7 @@ export const mockItems: Item[] = [
     sellerId: 's7',
     sellerName: 'TimeKeeper',
     availability: 'Available',
+    lockerId: 'l3',
   },
   {
     id: '8',
@@ -130,6 +138,7 @@ export const mockItems: Item[] = [
     sellerId: 's8',
     sellerName: 'SneakerHead',
     availability: 'Available',
+    lockerId: 'l4',
   },
 ];
 
